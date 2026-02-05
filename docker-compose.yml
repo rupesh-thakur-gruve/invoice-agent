@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  invoice-llm:
+    container_name: invoice-llm
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./input_pdfs:/app/input_pdfs
+      - ./output_json:/app/output_json
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    tty: true
+    stdin_open: true

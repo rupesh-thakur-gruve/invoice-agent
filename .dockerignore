@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+.git/
+.gitignore
+input_pdfs/
+output_json/
+*.pyc
