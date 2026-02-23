@@ -81,8 +81,28 @@ def extract_fields(text: str) -> Dict[str, Optional[str]]:
 
     extracted = {}
     for key, pattern in patterns.items():
-        match = re.search(pattern, text, re.IGNORECASE)
-        value = match.group(1).strip() if match else None
+        if key == "TDS":
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            total_tds = 0.0
+            if matches:
+                for val in matches:
+                    try:
+                        # Clean value (remove commas, currency symbols)
+                        clean_val = val.replace(",", "").replace("₹", "").replace("■", "").strip()
+                        total_tds += float(clean_val)
+                    except ValueError:
+                        continue
+                value = f"{total_tds:g}" # Format as needed, :g removes trailing zeros
+            else:
+                value = None
+        else:
+            match = re.search(pattern, text, re.IGNORECASE)
+            value = match.group(1).strip() if match else None
+            
+            # Post-process CP_Name to stop at first comma
+            if key == "CP_Name" and value and "," in value:
+                value = value.split(",")[0].strip()
+        
         extracted[key] = value
         logger.debug(f"Extracted {key}: {value}")
 

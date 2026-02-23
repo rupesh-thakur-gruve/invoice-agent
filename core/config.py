@@ -22,7 +22,7 @@ class Settings:
 
     # Extraction Regex Patterns
     EXTRACTION_PATTERNS = {
-        "CP_Name": os.getenv("REGEX_CP_NAME", r"Channel Partner\s*\(Bill From\)\s*[:\-]?\s*([\w\s\.\-&]+?)(?=\s+(?:PAN|GSTIN|Address|Email|Mob|Contact|S\.No|Sr|Plot|Shop|Flat|Suite|Phase|Sector|Near|Opp|Behind)|$)"),
+        "CP_Name": os.getenv("REGEX_CP_NAME", r"Channel Partner\s*\(Bill From\)\s*[:\-]?\s*(.+?)(?=\s+(?:PAN|GSTIN|Address|Email|Mob|Contact|S\.No|Sr|Plot|Shop|Flat|Suite|Phase|Sector|Near|Opp|Behind)|$)"),
         "PAN": os.getenv("REGEX_PAN", r"\bPAN\s*[:\-]?\s*([A-Z]{5}[0-9]{4}[A-Z])\b"),
         "GSTIN": os.getenv("REGEX_GSTIN", r"\bGSTIN\s*[:\-]?\s*([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z])\b"),
         "Agreement_Amount": os.getenv("REGEX_AGREEMENT_AMOUNT", r"Agreement Value\s*(?:Amount)?\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d{2})"),
