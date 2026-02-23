@@ -8,6 +8,7 @@ import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
 
+from core.config import settings
 from core.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -31,7 +32,7 @@ def extract_text_ocr(pdf_path: str) -> str:
     try:
         doc = fitz.open(pdf_path)
         for page_num, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300)
+            pix = page.get_pixmap(dpi=settings.OCR_DPI)
             img = Image.open(io.BytesIO(pix.tobytes("png")))
             page_text = pytesseract.image_to_string(img)
             text += page_text + "\n"
@@ -66,46 +67,17 @@ def extract_text_plain(file_path: str) -> str:
 def is_scanned_pdf(text: str) -> bool:
     """Detect if a PDF is scanned based on extracted text length."""
     # Threshold for scanned PDF detection
-    threshold = 10
+    threshold = settings.SCANNED_PDF_THRESHOLD
     is_scanned = len(text.strip()) < threshold
     if is_scanned:
         logger.info(f"PDF detected as scanned (text length < {threshold}).")
     return is_scanned
 
 def extract_fields(text: str) -> Dict[str, Optional[str]]:
-    """Extract fields from text using Regex patterns."""
+    """Extract fields from text using Regex patterns from settings."""
     text = re.sub(r"\s+", " ", text)
     
-    patterns = {
-        # 1. Channel Partner Name (Bill From)
-        "CP_Name": r"Channel Partner\s*\(Bill From\)\s*([\w\s\.\-&]+)",
-
-        # 2. PAN
-        "PAN": r"\bPAN\s*[:\-]?\s*([A-Z]{5}[0-9]{4}[A-Z])\b",
-
-        # 3. GSTIN (Channel Partner)
-        "GSTIN": r"\bGSTIN\s*[:\-]?\s*([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z])\b",
-
-        # 4. Agreement Amount
-        "Agreement_Amount": r"Agreement Value\s*(?:Amount)?\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d{2})",
-
-        # 5. Brokerage / Commission Amount
-        "Brokerage_Amount": r"(?:Commission|Brokerage)\s*@?\s*[\d\.]+%?\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d{2})",
-
-        # 6. CGST (9%)
-        "CGST": r"CGST\s*@?\s*9%\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d+)",
-
-        # 7. SGST (9%)
-        "SGST": r"SGST\s*@?\s*9%\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d+)",
-
-        # 8. Total Invoice Amount
-        "Total_Invoice_Amount": r"Total Invoice Amount\s*[:\-]?\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d+)",
-
-        # 9. TDS Amount
-        # "TDS": r"TDS\s*(?:u/s\s*194H)?\s*@?\s*(?:5%|20%)?\s*[:\-]?\s*[₹■]?\s*([\d,]+\.\d{2})"
-        "TDS": r"TDS\s*(?:u/s\s*194H)?\s*@?\s*(?:5%|20%)?\s*[:\-]?\s*[₹■]?\s*([\d,]+(?:\.\d{1,2})?)"
-
-    }
+    patterns = settings.EXTRACTION_PATTERNS
 
     extracted = {}
     for key, pattern in patterns.items():

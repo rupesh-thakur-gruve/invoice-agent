@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from core.config import settings
 from core.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -8,20 +9,7 @@ def calculate_score(comparisons: Dict[str, Any]) -> Dict[str, Any]:
     """
     Calculate the confidence score based on field matches.
     
-    Weights:
-    - CP Name Match: 5
-    - PAN Match: 15
-    - GSTIN Match: 15
-    - Agreement Amount Match: 15
-    - Brokerage Calculation: 20
-    - GST Breakup Validation (CGST & SGST): 10
-    - TDS Validation: 10
-    - Total Invoice Amount Match: 10
-    
-    Decision Logic:
-    - Score >= 90 & No Hard Stop -> AUTO_APPROVE
-    - Score 70-89 & No Hard Stop -> REVIEW
-    - Score < 70 OR Hard Stop -> REJECT
+    Weights and thresholds are loaded from settings.
     """
     logger.info("Calculating score for comparison results...")
     
@@ -40,50 +28,50 @@ def calculate_score(comparisons: Dict[str, Any]) -> Dict[str, Any]:
             failed_fields.append(field)
         return match
 
-    # 1. CP Name Match (5 points)
+    # 1. CP Name Match
     if is_match("CP_Name"):
-        score += 5
+        score += settings.WEIGHT_CP_NAME
 
-    # 2. PAN Match (15 points) - HARD STOP
+    # 2. PAN Match - HARD STOP
     if is_match("PAN"):
-        score += 15
+        score += settings.WEIGHT_PAN
     else:
         hard_stop_triggered = True
         hard_stop_reasons.append("PAN mismatch")
 
-    # 3. GSTIN Match (15 points) - HARD STOP
+    # 3. GSTIN Match - HARD STOP
     if is_match("GSTIN"):
-        score += 15
+        score += settings.WEIGHT_GSTIN
     else:
         hard_stop_triggered = True
         hard_stop_reasons.append("GSTIN mismatch")
 
-    # 4. Agreement Amount Match (15 points) - HARD STOP
+    # 4. Agreement Amount Match - HARD STOP
     if is_match("Agreement_Amount"):
-        score += 15
+        score += settings.WEIGHT_AGREEMENT_AMOUNT
     else:
         hard_stop_triggered = True
         hard_stop_reasons.append("Agreement Amount mismatch")
 
-    # 5. Brokerage Calculation (20 points)
+    # 5. Brokerage Calculation
     if is_match("Brokerage_Amount"):
-        score += 20
+        score += settings.WEIGHT_BROKERAGE_AMOUNT
 
-    # 6. GST Breakup Validation (10 points) - Both CGST and SGST must match
+    # 6. GST Breakup Validation - Both CGST and SGST must match
     if is_match("CGST") and is_match("SGST"):
-        score += 10
+        score += settings.WEIGHT_GST_BREAKUP
     elif not is_match("CGST") or not is_match("SGST"):
        # Logic already captured by is_match calling failed_fields append
        pass
 
 
-    # 7. TDS Validation (10 points)
+    # 7. TDS Validation
     if is_match("TDS"):
-        score += 10
+        score += settings.WEIGHT_TDS
 
-    # 8. Total Invoice Amount Match (10 points)
+    # 8. Total Invoice Amount Match
     if is_match("Total_Invoice_Amount"):
-        score += 10
+        score += settings.WEIGHT_TOTAL_AMOUNT
 
     # Determine Decision and Recommended Action
     decision = ""
@@ -92,10 +80,10 @@ def calculate_score(comparisons: Dict[str, Any]) -> Dict[str, Any]:
     if hard_stop_triggered:
         decision = "REJECT"
         recommended_action = "REJECT AND RETURN TO CHANNEL PARTNER"
-    elif score >= 90:
+    elif score >= settings.THRESHOLD_AUTO_APPROVE:
         decision = "AUTO_APPROVE"
         recommended_action = "AUTO APPROVE"
-    elif 70 <= score <= 89:
+    elif settings.THRESHOLD_REVIEW <= score < settings.THRESHOLD_AUTO_APPROVE:
         decision = "REVIEW"
         recommended_action = "MANUAL REVIEW REQUIRED"
     else:

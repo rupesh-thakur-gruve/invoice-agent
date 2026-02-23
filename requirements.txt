@@ -5,5 +5,5 @@ pymupdf
 pillow
 pytesseract
 requests
-google-generativeai
 python-docx
+python-dotenv

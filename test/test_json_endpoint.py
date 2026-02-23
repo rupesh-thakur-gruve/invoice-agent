@@ -8,14 +8,11 @@ import signal
 
 def test_json_endpoint():
     # Start the server
-    proc = subprocess.Popen(["./venv/bin/python", "-m", "uvicorn", "main:app", "--port", "8000"])
-    print(f"Server started with PID: {proc.pid}")
-    
     try:
         # Wait for server to start
         time.sleep(5)
         
-        url = "http://127.0.0.1:8000/extract/invoice"
+        url = "http://127.0.0.1:9090/extract/invoice"
         
         # Create a dummy PDF content or use an existing one if available
         # For testing purposes, we can just send a simple base64 string
